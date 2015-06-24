@@ -66,7 +66,7 @@ public:
 
 	Matrix (Matrix & t) {
 
-		/s/td::cout << "copy ctor " << std::endl;
+		//std::cout << "copy ctor " << std::endl;
 		siX = t.siX;
 		siY = t.siY;
 
@@ -181,23 +181,23 @@ public:
 
 		for(int i = 0; i < siY; i++) {
 			ChangeRows(0,i);
-			std::cout << "Multiplicate - " << i << "\nOsztok:" << 1/Matx[0][i]<<std::endl;
+			//std::cout << "Multiplicate - " << i << "\nOsztok:" << 1/Matx[0][i]<<std::endl;
 
 			MultiplicateRow(0,Matx[0][i] != 0?1/Matx[0][i]:1);
-			this->GetWholeMatrix();
-			std::cout << "-" << std::endl;
+			//this->GetWholeMatrix();
+			//std::cout << "-" << std::endl;
 
-			std::cout << "AddRow2Row - " << i+1 <<std::endl;
+			//std::cout << "AddRow2Row - " << i+1 <<std::endl;
 			for(int j = 1; j < siX; j++) {
 
 				AddRow2Row(j,0,(-1)*Matx[j][i]);
-				this->GetWholeMatrix();
-				std::cout << "--" << std::endl;
+			//	this->GetWholeMatrix();
+			//	std::cout << "--" << std::endl;
 			}
 			ChangeRows(0,i);
-			std::cout << "---" << std::endl;
-			this->GetWholeMatrix();
-			std::cout << "--------------" << std::endl;
+			//std::cout << "---" << std::endl;
+			//this->GetWholeMatrix();
+			//std::cout << "--------------" << std::endl;
 
 			
 			
@@ -209,8 +209,10 @@ public:
 		std::cout << "Gauss_2" << std::endl;
 		T pivot;
 		for(int i = 0; i < siY; i++) {
+
 			pivot = Matx[i][i] != 0?1/Matx[i][i]:1;
 			MultiplicateRow(i,pivot);
+
 			for(int j = i+1; j < siX; j++) {
 
 				AddRow2Row(j,i,(-1)*Matx[j][i]);
@@ -244,18 +246,13 @@ public:
 			MultiplicateRow(0,pivot);
 
 			b.MultiplicateRow(0,pivot);
-			this->GetWholeMatrixVector(b);
-			std::cout << "-" << std::endl;
-
-			
+			//this->GetWholeMatrixVector(b);
 			for(int j = 1; j < siX; j++) {
 				
 				pivot = (-1)* Matx[j][i];
 				
 				b.AddRow2Row(j,0,pivot);
 				AddRow2Row(j,0,pivot);
-				
-				std::cout << "--" << std::endl;
 			}
 
 		
@@ -264,6 +261,8 @@ public:
 	
 			
 		}
+		Free_Param = siX - Rank();
+		std::cout << "Free Parameters: " << Free_Param<< std::endl;
 
 	}
 
@@ -295,15 +294,35 @@ public:
 	}
 
 	int Rank() {
-		Matrix<T> Result;
+		Matrix<T> Result = *this;
 		int rank = 0;
-		Result = this;
-		Result.GaussElimination_2();
+		Result.GaussElimination();
 
-		return 0;
+		for(int i = 0; i < siX; i++) {
+
+			if(Result.CountZeroItems(i) == 0) rank++;
+			//std::cout << "R: " << rank << std::endl;
+		}
+
+		return rank;
 
 	}
+	int CountZeroItems(int a) {
+		int Zero = 0;
 
+		if(Matx[a][a] != 0) {
+			return 0;
+		}
+
+		for(int i = 0; i < siY; i++) {
+			if(Matx[a][i] == 0) Zero++;
+		}
+
+		//std::cout<< "Z: " << a << " - " << Zero << std::endl;
+		//std::cout <<"A: " << a << " - " << Matx[a][a] << std::endl;
+		
+		return Zero;
+	}
 	void ReOrderRows() { 
 		int Zero_Num[siX] = {0};
 
@@ -389,18 +408,21 @@ int main()
 		}
 	}*/
 	A.FillMatrix(-2,0,0);
-	A.FillMatrix(2,0,1);
+	A.FillMatrix(-2,0,1);
 	A.FillMatrix(1,0,2);
 
-	A.FillMatrix(6,1,0);
-	A.FillMatrix(-3,1,1);
-	A.FillMatrix(-4,1,2);
+	A.FillMatrix(-2,1,0);
+	A.FillMatrix(-7,1,1);
+	A.FillMatrix(3,1,2);
 
-	A.FillMatrix(-4,2,0);
-	A.FillMatrix(1,2,1);
-	A.FillMatrix(1,2,2);
+	A.FillMatrix(2,2,0);
+	A.FillMatrix(12,2,1);
+	A.FillMatrix(-5,2,2);
 	
 	std::cout << "Fill the Vector" << std::endl;
+	W.FillMatrix(-1,0,0);
+	W.FillMatrix(6,1,0);
+	W.FillMatrix(-13,2,0);
 	/*for(int i = 0; i < x; i++)
 	{
 		for(int j = 0; j<1; j++)
@@ -424,15 +446,14 @@ int main()
 	//B.GetWholeMatrix();
 	//A.ChangeRows(0,1);
 	//A.GetWholeMatrix();
-	//A.GaussEliminationWVector(W);
-	//A.GetWholeMatrixVector(W);
+	A.GaussEliminationWVector(W);
+    A.GetWholeMatrixVector(W);
 	//std::cout << "A Determinant:" << A.Determinant() << std::endl;
 	//A.GaussElimination_2();
-	Matrix<float> B = A,C;
-	
-	B.GetWholeMatrix();
-	C = A;
-	C.GetWholeMatrix();
+	std::cout << "A rangja:" << A.Rank() << std::endl;
+	//B.GetWholeMatrix();
+	//C = A;
+	//C.GetWholeMatrix();
 	//amikor meghívódik az operator()* fgv akkor this = A...
 	//C = A+B;
 	//C.GetWholeMatrix();
