@@ -26,6 +26,9 @@ public:
 		} else {
 			Squared = false;
 		}
+
+		//determináns előjele
+		Det_Sign = 1;
 	};
 	//Destruktor
 	~Matrix()
@@ -67,8 +70,32 @@ public:
 		return *this;
 			
 	}
+
+	Matrix<T> & operator=(const Matrix<T> & A) {
+		//std::cout << "copy assingment" << std::endl;
+		siX = A.siX;
+		siY = A.siY;
+		//egy előre lefoglalt kibaszott 0 terület törlése :'(
+		delete [] Matx;
+
+
+		Matx = new T*[siX];
+		for(int i = 0; i < siX; i++) {
+			//aztán pedig egyesével lefoglalunk a mutatók számára dinamikus memóriát
+			Matx[i] = new T[siY];
+		}
+
+		for(int i = 0; i < A.GetX();i++) {
+			for(int j = 0; j < A.GetY();j++) {
+				this->FillMatrix(A.GetValue(i,j),i,j);
+			}
+		}
+
+		Squared = A.Squared;
+		return *this;
+	}
 	//Másoló konstuktor
-	Matrix (Matrix & t) {
+	Matrix (const Matrix<T> & t) {
 
 		//std::cout << "copy ctor " << std::endl;
 		siX = t.GetX();
@@ -93,9 +120,10 @@ public:
 		Squared = t.Squared;
 
 	}
+	
 	//Matrix (const Matrix&);
 	//két mátrix összeadására szolgáló operátorunk
-	Matrix & operator+ (const Matrix & t) {
+	Matrix operator+ (const Matrix & t) {
 
 		//std::cout << "Starting add the two Matrixes..." << std::endl;
 		if(this->GetY() == t.GetX()) {
@@ -111,24 +139,25 @@ public:
 
 			}
 
-			*this = Result;
-			return *this;
+			
+			return Result;
 
 		} else {
-				std::cout << "Sorry I can not multiplicate these two Matrixes..."<< std::endl;
+				std::cout << "Sorry I can not add these two Matrixes..."<< std::endl;
 				
 		}
 		 return *this;
 	}
 
-	Matrix & operator* (const Matrix & A)
+	Matrix operator* (const Matrix & A)
 	{
 		T Var = 0;
 		//std::cout << "Starting multiplicate the two Matrixes..." << std::endl;
+		
 		if(this->GetY() == A.GetX())
 		{
-			Matrix<T> Result(this->GetX(),A.GetY());
 			
+			Matrix<T> Result(this->GetX(),A.GetY());
 			for(int i = 0; i < Result.GetX();i++)
 			{
 				for(int j = 0; j < Result.GetY(); j++)
@@ -147,15 +176,14 @@ public:
 				}
 
 			}
-
-			*this = Result;
-			return *this;
+			return Result;
 		}
 		else
 		{
 			std::cout << "Sorry I can not multiplicate these two Matrixes..."<< std::endl;
 			
 		}
+		
 	}
 	//Mátrix feltöltése, v - érték, x - x koordináta, y - y koordináta
 	void FillMatrix(T v, int x, int y) const {
@@ -514,13 +542,70 @@ public:
 
 	}
 
+	void Reset() {
+		for(int i = 0; i < siX; i++) {
+			for(int j = 0; j < siY; j++) {
+				FillMatrix(0,i,j);
+			}
+		}
+	}
+
+	void Make_Identity() {
+		if(Squared) {
+			Reset();
+			for(int i = 0; i < siX; i++) {
+				FillMatrix(1,i,i);
+			}
+		}
+	}
+
+	Matrix Inverz_Matrix() {
+		Matrix<T> ID(siX,siY);
+		Matrix<T> O = *this;
+		ID.Make_Identity();
+
+		T pivot;
+		
+		for(int i = 0; i < siX; i++) {
+			O.ChangeRows(0,i);
+			ID.ChangeRows(0,i);
+			pivot = O.GetValue(0,i)!= 0?1/O.GetValue(0,i):1;
+			
+			O.MultiplicateRow(0,pivot);
+
+			ID.MultiplicateRow(0,pivot);
+
+			for(int j = 1; j < siX; j++) {
+				
+				pivot = (-1)* O.GetValue(j,i);
+				
+				ID.AddRow2Row(j,0,pivot);
+				O.AddRow2Row(j,0,pivot);
+			}
+	
+			O.ChangeRows(0,i);
+			ID.ChangeRows(0,i);
+	
+			
+		}
+
+		return ID;
+
+
+	}
+	//kimeneti operátor << túlterhelése
+	friend std::ostream & operator<< ( std::ostream & os, Matrix & A ) {
+          A.GetWholeMatrix();
+          return os;
+     }
+
 private:
 	//egy pár privát tag.
 	int siX;
 	int siY;
 	bool Squared;
 	bool Null_Matrix;
-	int Det_Sign = 1;
+	int Det_Sign;
 	T** Matx = NULL;
 };
 
@@ -564,9 +649,9 @@ int main()
 	A.FillMatrix(-5,2,2);
 	
 	std::cout << "Fill the Vector" << std::endl;
-	W.FillMatrix(3,0,0);
-	W.FillMatrix(1,1,0);
-	W.FillMatrix(-12,2,0);
+	//W.FillMatrix(3,0,0);
+	//W.FillMatrix(1,1,0);
+	//W.FillMatrix(-12,2,0);
 	/*for(int i = 0; i < x; i++)
 	{
 		for(int j = 0; j<1; j++)
@@ -586,10 +671,10 @@ int main()
 		}
 	}*/
 
-	A.GetWholeMatrix();
-	A.GaussEliminationWVector(W);
-    A.GetWholeMatrixVector(W);
-	std::cout << "A Determinant:" << A.Determinant() << std::endl;
+	//A.GetWholeMatrix();
+	//A.GaussEliminationWVector(W);
+    //A.GetWholeMatrixVector(W);
+	//std::cout << "A Determinant:" << A.Determinant() << std::endl;
 		
 	//A.GetWholeMatrix();
 	//A.GaussElimination_2();
@@ -601,5 +686,19 @@ int main()
 	//amikor meghívódik az operator()* fgv akkor this = A...
 	//C = A+B;
 	//C.GetWholeMatrix();
+
+	//Matrix<float> ID(4,4);
+	//ID.Make_Identity();
+	//ID.GetWholeMatrix();
+
+	Matrix<float> C = A.Inverz_Matrix();
+	std::cout << C;
+
+	std::cout << A;
+
+	Matrix<float> Z(x,y);
+	Z = A*C;
+	//Z = C*A;
+	std::cout << Z;
 	return 0;
 }
