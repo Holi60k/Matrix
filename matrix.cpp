@@ -4,7 +4,7 @@
 
 #include <iostream>
 
-template<class T>
+template<typename T>
 class Matrix {
 
 public:
@@ -12,6 +12,7 @@ public:
 	//Konstuktor
 	Matrix(int a = 0, int b = 0):siX(a),siY(b)
 	{
+		std::cout << "Matrix ctor" << std::endl;
 		//inicializálás itt történik, memóriában foglalunk helyet ennek a sok szép számnak...
 		//beállítjuk a mutatónkat hogy mutasson egy mutatóra... dafaq... igen ez most így lesz :)
 		Matx = new T*[a];
@@ -19,7 +20,7 @@ public:
 			//aztán pedig egyesével lefoglalunk a mutatók számára dinamikus memóriát
 			Matx[i] = new T[b];
 		}
-
+		Reset();
 		if(siX == siY) {
 
 			Squared = true;
@@ -564,7 +565,7 @@ public:
 		Matrix<T> O = *this;
 		ID.Make_Identity();
 
-		T pivot;
+		float pivot;
 		
 		for(int i = 0; i < siX; i++) {
 			O.ChangeRows(0,i);
@@ -598,8 +599,15 @@ public:
           A.GetWholeMatrix();
           return os;
      }
+     Matrix & operator<<(int value) {
+     	static int i = 0, j = 0;
+     	FillMatrix(value,i,j++);
+     	if (j == siY) { j = 0; i++;}
+     	if (i == siX) i = 0;
+     	return *this;
+     }
 
-private:
+protected:
 	//egy pár privát tag.
 	int siX;
 	int siY;
@@ -610,6 +618,21 @@ private:
 };
 
 
+template <typename T>
+class Vector:public Matrix<T> {
+
+public:
+	Vector(int x):Matrix<T>(x,1){
+		std::cout << "Vector ctor " << std::endl;
+		this->siX = x;
+		this->siY = 1;
+	};
+	~Vector(){
+		std::cout << "Vector dtor" << std::endl;
+	};
+
+	
+};
 
 int main()
 {
@@ -620,10 +643,13 @@ int main()
 	//std::cout << "How many collumns do you want:";
 	//std::cin >> y;
 	
-	Matrix<float> A(x,y), W(x,1);
+	Matrix<float> A(x,y);
+	Vector<float> W(3);
+	W.FillMatrix(4,0,0);
+	std::cout << W;
 
 	int v=0;
-	std::cout << "Fill the first Matrix" << std::endl;
+	//std::cout << "Fill the first Matrix" << std::endl;
 	/*for(int i = 0; i < x; i++)
 	{
 		for(int j = 0; j<y; j++)
@@ -633,22 +659,24 @@ int main()
 			A.FillMatrix(v,i,j);
 		}
 	}*/
+	A << -2 << -1 << 4 << 2 << 3 << -1 <<  -4 << -10 << -5;
+	std::cout << A;
 	//1. sor
-	A.FillMatrix(-2,0,0);
-	A.FillMatrix(-1,0,1);
-	A.FillMatrix(4,0,2);
+	//A.FillMatrix(-2,0,0);
+	//A.FillMatrix(-1,0,1);
+	//A.FillMatrix(4,0,2);
 
 	//2. sor
-	A.FillMatrix(2,1,0);
-	A.FillMatrix(3,1,1);
-	A.FillMatrix(-1,1,2);
+	//A.FillMatrix(2,1,0);
+	//A.FillMatrix(3,1,1);
+	//A.FillMatrix(-1,1,2);
 
 	//3. sor
-	A.FillMatrix(-4,2,0);
-	A.FillMatrix(-10,2,1);
-	A.FillMatrix(-5,2,2);
+	//A.FillMatrix(-4,2,0);
+	//A.FillMatrix(-10,2,1);
+	//A.FillMatrix(-5,2,2);
 	
-	std::cout << "Fill the Vector" << std::endl;
+	//std::cout << "Fill the Vector" << std::endl;
 	//W.FillMatrix(3,0,0);
 	//W.FillMatrix(1,1,0);
 	//W.FillMatrix(-12,2,0);
@@ -678,7 +706,8 @@ int main()
 		
 	//A.GetWholeMatrix();
 	//A.GaussElimination_2();
-	//A.GetWholeMatrixVector(W);
+//	A.GetWholeMatrixVector(W);
+	//std::cout << A;
 	//std::cout << "A rangja:" << A.Rank() << std::endl;
 	//B.GetWholeMatrix();
 	//C = A;
@@ -691,14 +720,14 @@ int main()
 	//ID.Make_Identity();
 	//ID.GetWholeMatrix();
 
-	Matrix<float> C = A.Inverz_Matrix();
-	std::cout << C;
+	//Matrix<float> C = A.Inverz_Matrix();
+	//std::cout << C;
 
-	std::cout << A;
+	//std::cout << A;
 
-	Matrix<float> Z(x,y);
-	Z = A*C;
+	//Matrix<float> Z(x,y);
+	//Z = A*C;
 	//Z = C*A;
-	std::cout << Z;
+	//std::cout << Z;
 	return 0;
 }
