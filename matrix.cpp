@@ -4,13 +4,13 @@
 //  Nevermind if it has some bugs, they may be fixed :)
 
 #include <iostream>
-
+#include <cmath>
 template<typename T>
 class Matrix {
  public:
 	// Konstuktor
 	Matrix(int a = 0, int b = 0):siX(a), siY(b) {
-		std::cout << "Matrix ctor" << std::endl;
+		//std::cout << "Matrix ctor" << std::endl;
 		// inicializálás itt történik, memóriában foglalunk helyet ennek a sok szép számnak
 		// beállítjuk a mutatónkat hogy mutasson egy mutatóra... igen ez most így lesz
 		Matx = new T*[a];
@@ -152,6 +152,7 @@ class Matrix {
 		}
 		// GetWholeMatrix();
 		Squared = t.Squared;
+		Det_Sign = t.Det_Sign;
 
 	}
 	
@@ -264,7 +265,7 @@ class Matrix {
 	// 3 - visszacseréljük a két sort és újraindul az algoritmus
 	// végülis Gauss-Jordan elimináció csak itt nem tűnik fel az alul-felül való elimináció mert mindig sort cserélünk és csak lefelé eliminálunk :)
 	void GaussElimination() {
-		std::cout << "Gauss-Jordan" << std::endl;
+		//std::cout << "Gauss-Jordan" << std::endl;
 
 		for(int i = 0; i < siX; i++) {
 			ChangeRows(0,i);
@@ -282,9 +283,19 @@ class Matrix {
 	void GaussElimination_2() {
 		// std::cout << "Gauss_2" << std::endl;
 		T pivot;
+		int csI;
+
 		for (int i = 0; i < siX; i++) {
 
-			if (WhereIsItsRow(i) == i){
+			for(int j = i; j < siY; j++) {
+
+				csI = Abs_Max(j);
+				ChangeRows(j,csI);
+
+
+			}
+			//std::cout << *this;
+			//if (WhereIsItsRow(i) == i){
 				pivot = Matx[i][i] != 0?1/Matx[i][i]:1;
 				MultiplicateRow(i,pivot);
 
@@ -294,10 +305,10 @@ class Matrix {
 				}
 
 				MultiplicateRow(i,1/pivot);
-			} else {
-				ChangeRows(i,WhereIsItsRow(i));
-				GaussElimination_2();
-			}
+			//} else {
+			//	ChangeRows(i,WhereIsItsRow(i));
+			//	GaussElimination_2();
+			//}
 		}
 
 
@@ -316,11 +327,19 @@ class Matrix {
 	// De a működés itt is természetesen a Gauss-Jordan...
 	// Szabad paraméterek is működnek elviekben de még nem jól... :(
 	void GaussEliminationWVector(Matrix & b) {
-		Matrix<T> Result = *this;
-		std::cout << "Gauss_W_Vector" << std::endl;
+		//Matrix<T> Result = *this;
+		//std::cout << "Gauss_W_Vector" << std::endl;
 		T pivot;
 		int Free_Param = 0;
+		int csI = 0;
 		for(int i = 0; i < siX; i++) {
+
+			for(int j = i; j < siY; j++) {
+				csI = Abs_Max(j);
+				ChangeRows(j,csI);
+				b.ChangeRows(j,csI);
+			}
+
 			ChangeRows(0,i);
 			b.ChangeRows(0,i);
 			pivot = Matx[0][i] != 0?1/Matx[0][i]:1;
@@ -337,35 +356,48 @@ class Matrix {
 				AddRow2Row(j,0,pivot);
 			}
 
-
-			ChangeRows(0,i);
+         	ChangeRows(0,i);
 			b.ChangeRows(0,i);
-
-			
 		}
-		Result.GaussElimination_2();
-		Free_Param = siY - Result.Rank();
-		std::cout << "Free Parameters: " << Free_Param << std::endl;
+		//Result.GaussElimination_2();
+		//Free_Param = siY - Result.Rank();
+		//std::cout << "Free Parameters: " << Free_Param << std::endl;
+
+	}
+
+	int Abs_Max(int oIndex) {
+		int max = 0;
+		int index;
+		for(int i = 0; i < GetY(); i++) {
+			if(std::abs(Matx[i][oIndex]) > max) {
+				max = Matx[i][oIndex];
+				index = i;
+			}
+		}
+		return index;
 
 	}
 	// Determináns számítás
 	float Determinant() {
 
 		// std::cout << "Determinant" << std::endl;
-		float Det = 1;
+		double Det = 1;
 		Matrix<T> Result = *this;
 		if(Squared) {
 
-			if(!Result.IsTriangle()) {
+			/*if(!Result.IsTriangle()) {
 				if(Result.CanIReOrderToTriangle()) 
 					Result.ReOrderTriangle();
-			}
+			}*/
 			
 			Result.GaussElimination_2();
+			std::cout << Result;
 			for(int i = 0; i < siX; i++) {
 				Det *= Result.Matx[i][i];
+			  // std::cout << Result.Matx[i][i] << std::endl;
+				//std::cout << Det;
 			}
-
+			//std::cout <<"Det:" << Det*Result.Get_Det_Sign() << std::endl;
 			return Det*Result.Get_Det_Sign();
 
 		} else {
@@ -627,7 +659,7 @@ class Matrix {
 		A.GetWholeMatrix();
 		return os;
 	}
-	Matrix & operator<<(int value) {
+	Matrix & operator<<(T value) {
 		static int i = 0, j = 0;
 		FillMatrix(value,i,j++);
 		if (j == siY) { j = 0; i++;}
@@ -641,7 +673,7 @@ protected:
 	int siY;
 	bool Squared;
 	bool Null_Matrix;
-	int Det_Sign;
+	int Det_Sign = 1;
 	T** Matx = NULL;
 };
 
@@ -651,12 +683,12 @@ class Vector:public Matrix<T> {
 
 public:
 	Vector(int x):Matrix<T>(x,1) {
-		std::cout << "Vector ctor " << std::endl;
+		//std::cout << "Vector ctor " << std::endl;
 		this->siX = x;
 		this->siY = 1;
 	};
 	~Vector() {
-		std::cout << "Vector dtor" << std::endl;
+		//std::cout << "Vector dtor" << std::endl;
 	};
 
 	
@@ -664,16 +696,27 @@ public:
 
 int main() {
 
-	float x = 3,y = 3;
+	float x = 4,y = 4;
 	// std::cout << "How many rows do you want:";
 	// std:: cin >> x;
 	// std::cout << "How many collumns do you want:";
 	// std::cin >> y;
 	
-	Matrix<float> A(x,y);
-	Vector<float> W(3);
-	W.FillMatrix(4,0,0);
-	std::cout << W;
+	Matrix<double> A(x,y);
+	Vector<double> b(x);
+	//A << 0 << 1 << -2 << 4 << 1 << -3 << 0 << 2 << 4 << 2 <<-28 << 1 << -1 << 0 << 1 << 1;
+	//b << 3 << 0 << -21 << 1;
+	A << -1 << -2 << 0 << 1 << 2 << 4 << 0 << 1 << 1 << 3 << 1 << 4 << 3 << 8 << 2 << -2;
+	//b << 2.34 << 1.245 << -3.4 << 1.234;
+	//A << 2 << 3 << 1.2 << 2.4 << 1.6 << 2.44 << -4.6 << -10.1 << 2.34;
+	//b << -1.7 << 5.96 << 27.21;
+	std::cout << A;
+	std::cout << A.Determinant() << std::endl;
+	//A.GaussEliminationWVector(b);
+	//A.GetWholeMatrixVector(b);
+	//std::cout << b;
+	//W.FillMatrix(4,0,0);
+	//std::cout << W;
 
 	// std::cout << "Fill the first Matrix" << std::endl;
 	/*for(int i = 0; i < x; i++)
@@ -685,16 +728,16 @@ int main() {
 			A.FillMatrix(v,i,j);
 		}
 	}*/
-	A << -2 << -1 << 4 << 2 << 3 << -1 <<  -4 << -10 << -5;
-	std::cout << A;
-	A *=-1;
-	std::cout << A;
-	Matrix<float> B = std::move(A);
+	//A << -2 << -1 << 4 << 2 << 3 << -1 <<  -4 << -10 << -5;
 	//std::cout << A;
-	std::cout << B;
-	Matrix<float> C;
-	C = std::move(B);
-	std::cout << C;
+	//A *=-1;
+	//std::cout << A;
+	//Matrix<float> B = std::move(A);
+	//std::cout << A;
+	//std::cout << B;
+	//Matrix<float> C;
+	//C = std::move(B);
+	//std::cout << C;
 	// 1. sor
 	// A.FillMatrix(-2,0,0);
 	// A.FillMatrix(-1,0,1);
