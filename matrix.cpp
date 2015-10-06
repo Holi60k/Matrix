@@ -44,7 +44,7 @@ class Matrix {
 	// mozgató szemantika
 	Matrix (Matrix<T> && A) {
 
-		std::cout << "move ctor" << std::endl;
+		//std::cout << "move ctor" << std::endl;
 		Matx = new T*[A.GetX()];
 		for(int i = 0; i < A.GetX(); i++) {
 			// aztán pedig egyesével lefoglalunk a mutatók számára dinamikus memóriát
@@ -59,7 +59,7 @@ class Matrix {
 	// mozgató értékadá
 	Matrix & operator= (Matrix<T> && A) {
 
-		std::cout << "move assingment" << std::endl;
+		//std::cout << "move assingment" << std::endl;
 		siX = A.GetX();
 		siY = A.GetY();
 		Squared = A.GetSquared();
@@ -201,7 +201,7 @@ class Matrix {
 			std::cout << "Sorry I can not multiplicate these two Matrixes..."<< std::endl;
 			
 		}
-		
+		return 0;
 	}
 
 	Matrix & operator*= (const T & B) {
@@ -606,6 +606,69 @@ class Matrix {
 
 	}
 
+	Matrix Transparent() {
+
+		Matrix<T> Transparent(siX,siY);
+		for(int i = 0; i < siX; i++) {
+			for(int j = 0; j < siY; j++) {
+				//fordított sorrendben feltöltjük a mátrixot
+				Transparent.FillMatrix(GetValue(j,i),i,j);
+			}
+		}
+		return Transparent;
+	}
+
+	void LU() {
+
+	}
+
+	void Choelsky() {
+		//A = LU
+		//L mátrix alsó háromszög alakú, főátlójában csak egyes van
+		//azok alatt pedig a pivot elemek (?!)
+		//U = felső háromszög alakú mátrix ami a gauss elimináció után marad
+		//U főátlóbeli elemeit diagonális mátrixba gyűjtve D
+		//A = LDU
+		//A = LL^T
+
+		Matrix<T> L(siX,siY),U(siX,siY),D(siX,siY),Lv(siX,siY);
+		L.Make_Identity();
+		std::cout << L;
+		U.Reset();
+		T pivot;
+		
+
+		for (int i = 0; i < siX; i++) {
+			
+			pivot = Matx[i][i] != 0?1/Matx[i][i]:1;
+			for(int j = i;j < siX;j++) {
+				L.Matx[j][i] = Matx[i][j]*pivot;
+			}
+
+			MultiplicateRow(i,pivot);
+
+			for (int j = i+1; j < siX; j++) {
+
+				AddRow2Row(j,i,(-1)*Matx[j][i]);
+			}
+
+			MultiplicateRow(i,1/pivot);
+	    }
+
+	    U = *this;
+		std::cout << L;
+		std::cout << U;
+
+		D.Reset();
+		for(int i = 0; i < siX; i++) {
+			D.FillMatrix(std::sqrt(U.GetValue(i,i)),i,i);
+		}
+		Lv = L*D;
+		std::cout << D;
+		D = Lv*Lv.Transparent();
+		std::cout << D;
+	}
+
 	void Reset() {
 		for(int i = 0; i < siX; i++) {
 			for(int j = 0; j < siY; j++) {
@@ -696,22 +759,27 @@ public:
 
 int main() {
 
-	float x = 4,y = 4;
+	float x = 3,y = 3;
 	// std::cout << "How many rows do you want:";
 	// std:: cin >> x;
 	// std::cout << "How many collumns do you want:";
 	// std::cin >> y;
 	
-	Matrix<double> A(x,y);
+	Matrix<double> A(x,y),B(x,y);
 	Vector<double> b(x);
+	A << 5 << 7 << 3 << 7 << 11 << 2 << 3 << 2 << 6;
+	std::cout << A;
+	A.Choelsky();
 	//A << 0 << 1 << -2 << 4 << 1 << -3 << 0 << 2 << 4 << 2 <<-28 << 1 << -1 << 0 << 1 << 1;
 	//b << 3 << 0 << -21 << 1;
-	A << -1 << -2 << 0 << 1 << 2 << 4 << 0 << 1 << 1 << 3 << 1 << 4 << 3 << 8 << 2 << -2;
+	//A << -1 << -2 << 0 << 1 << 2 << 4 << 0 << 1 << 1 << 3 << 1 << 4 << 3 << 8 << 2 << -2;
 	//b << 2.34 << 1.245 << -3.4 << 1.234;
 	//A << 2 << 3 << 1.2 << 2.4 << 1.6 << 2.44 << -4.6 << -10.1 << 2.34;
 	//b << -1.7 << 5.96 << 27.21;
-	std::cout << A;
-	std::cout << A.Determinant() << std::endl;
+	//std::cout << A;
+	//B = A.Transparent();
+	//std::cout << B;
+	//std::cout << A.Determinant() << std::endl;
 	//A.GaussEliminationWVector(b);
 	//A.GetWholeMatrixVector(b);
 	//std::cout << b;
