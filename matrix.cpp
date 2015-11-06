@@ -2,9 +2,14 @@
 //  Matrix class made by Holi60k
 //  Just for fun
 //  Nevermind if it has some bugs, they may be fixed :)
-
+//  Numerikus módszerek első beadandó:
+//	Tridiagonális mátrix algoritmusa 
+//  Elkészítési dátuma: 2015.10.8
 #include <iostream>
+#include <limits>
 #include <cmath>
+typedef std::numeric_limits< double > dbl;
+
 template<typename T>
 class Matrix {
  public:
@@ -185,17 +190,19 @@ class Matrix {
 		if(this->GetY() == A.GetX()) {
 			
 			Matrix<T> Result(this->GetX(),A.GetY());
-			for(int i = 0; i < Result.GetX();i++) {
-				for(int j = 0; j < Result.GetY(); j++) {				
+			for(int i = 0; i < Result.GetY();i++) {
+				for(int j = 0; j < Result.GetX(); j++) {				
 					
 					for(int l = 0; l < this->GetY();l++ ) {
 						Var += this->GetValue(j,l) * A.GetValue(l,i);
 					}			
 					Result.FillMatrix(Var,j,i);
 					Var = 0;
+					
 				}
 
 			}
+
 			return Result;
 		} else {
 			std::cout << "Sorry I can not multiplicate these two Matrixes..."<< std::endl;
@@ -589,13 +596,16 @@ class Matrix {
 	// Kiiratja a mátrixunkat illetve a paraméterül kapott vektorunkat is 
 	void GetWholeMatrixVector(Matrix & b) const {
 		// std::cout << "Get the whole Martix..." << std::endl;
+
 		for(int i = 0; i < siX; i++)
 		{
 			for(int j = 0; j < siY; j++)
 			{
 				// Matx[i][j] = v;
+				std::cout.precision(15);
 				std::cout << Matx[i][j] << " ";
 			}
+			std::cout.precision(15);
 			std::cout << b.Matx[i][0];
 			std::cout << std::endl;
 		}
@@ -622,7 +632,7 @@ class Matrix {
 
 	}
 
-	void Choelsky() {
+	void Cholesky() {
 		//A = LU
 		//L mátrix alsó háromszög alakú, főátlójában csak egyes van
 		//azok alatt pedig a pivot elemek (?!)
@@ -667,6 +677,57 @@ class Matrix {
 		std::cout << D;
 		D = Lv*Lv.Transparent();
 		std::cout << D;
+	}
+
+	void Cholesky_Scratch(Matrix & b) {
+
+		Matrix<T> y(siX,1);
+		y.Reset();
+		//std::cout << b;
+		std::cout << "Cholesky start.." << std::endl;
+		for(int K = 0; K < siX; K++) {
+
+			if(Matx[K][K] > 10e-15) {
+				Matx[K][K] = sqrt(Matx[K][K]);
+
+			}
+
+			for(int i = K+1; i < siX; i++) {
+				Matx[i][K] = Matx[i][K] / Matx[K][K];
+
+				for(int j = K+1; j <=i; j++) {
+					Matx[i][j] = Matx[i][j] - Matx[i][K]*Matx[j][K];
+				}
+			}
+		}
+		double sum = 0;
+		for(int i = 0; i < siX; i++) {
+			sum = 0;
+			for(int j = 0; j < i; j++) {
+				sum += Matx[i][j]*b.Matx[j][0];
+			}
+			
+			
+			b.Matx[i][0] = (b.Matx[i][0] - sum)/Matx[i][i];
+	
+		}
+
+
+		std::cout << b;
+
+		for(int i = 0; i < siX; i++) {
+			sum = 0;
+			for(int j = i+1; j < siX; j++) {
+				sum += Matx[i][j]*b.Matx[j][0];
+			}
+			
+			
+			b.Matx[i][0] = (b.Matx[i][0] - sum)/Matx[i][i];
+	
+		}
+		std::cout << b;
+		std::cout << "Cholesky finnish." << std::endl;
+
 	}
 
 	void Reset() {
@@ -751,127 +812,102 @@ public:
 		this->siY = 1;
 	};
 	~Vector() {
-		//std::cout << "Vector dtor" << std::endl;
+	//std::cout << "Vector dtor" << std::endl;
 	};
 
+	void GetVector() const {
+		for(int i = 0; i < this->siX; i++)
+		{
+			std::cout.precision(8);
+			std::cout << std::fixed << this->Matx[i][0] << " ";
+		}
+		std::cout << std::endl;
+
+	}
+
+	friend std::ostream & operator<< ( std::ostream & os, Vector & A ) {
+		A.GetVector();
+		return os;
+	}
 	
+	static bool TriDiagon(Vector & a,Vector & b, Vector & c, Vector & f, int size, Vector & x) {
+		Vector<double> L(size+1),B(size+1);
+	
+		L.Matx[0][0] = 0;
+		B.Matx[0][0] = 0;
+		for(int i = 0; i < size; i++) {
+			//std::cout << "for ciklus belseje" << std::endl;
+			
+			if( std::abs((b.Matx[i][0]+L.Matx[i][0]*a.Matx[i][0])) > 10e-15 ) {
+				//std::cout << (std::fabs((b.Matx[i][0]+L.Matx[i][0]*a.Matx[i][0]))) << std::endl;
+				//std::cout << b.Matx[i][0] << std::endl;
+				L.Matx[i+1][0] = (-1)*c.Matx[i][0] / (b.Matx[i][0]+L.Matx[i][0]*a.Matx[i][0]);
+				B.Matx[i+1][0] = (f.Matx[i][0] - a.Matx[i][0]*B.Matx[i][0])/ (b.Matx[i][0]+L.Matx[i][0]*a.Matx[i][0]);
+				//std::cout << i+1 << ".-edik változó létrhozva..." << std::endl;
+				//std::cout << L.Matx[i+1][0] << "||" << B.Matx[i+1][0] << std::endl;
+			} else {
+				//std::cout << (std::fabs((b.Matx[i][0]+L.Matx[i][0]*a.Matx[i][0]))) << std::endl;
+				std::cout << "hiba" << std::endl;
+				return false;
+			}
+
+		}
+
+		//std::cout << "x változó utolsó elemének feltöltése" << std::endl;
+		x.Matx[size-1][0] = (f.Matx[size-1][0] - a.Matx[size-1][0]*B.Matx[size-1][0]) / (b.Matx[size-1][0]+L.Matx[size-1][0]*a.Matx[size-1][0]);
+		//std::cout << x.Matx[size-1][0] << std::endl;
+		//std::cout << "x változó  feltöltése" << std::endl;
+		for(int i = size-2; i > -1; i--)
+		{
+			x.Matx[i][0] = L.Matx[i+1][0]*x.Matx[i+1][0]+B.Matx[i+1][0];
+
+			//std::cout << i << ".-edik változó létrhozva..." << std::endl;
+			//std::cout << i << " - " << x.Matx[i][0] << std::endl;
+
+		}
+		return true;
+
+
+	}
+private:
+
 };
 
 int main() {
+	//std::fstream myfile("trIN3", std::ios_base::in);
+	int M;
+	int n;
+	double Input;
+    std::cin >> M;
 
-	float x = 3,y = 3;
-	// std::cout << "How many rows do you want:";
-	// std:: cin >> x;
-	// std::cout << "How many collumns do you want:";
-	// std::cin >> y;
-	
-	Matrix<double> A(x,y),B(x,y);
-	Vector<double> b(x);
-	A << 5 << 7 << 3 << 7 << 11 << 2 << 3 << 2 << 6;
-	std::cout << A;
-	A.Choelsky();
-	//A << 0 << 1 << -2 << 4 << 1 << -3 << 0 << 2 << 4 << 2 <<-28 << 1 << -1 << 0 << 1 << 1;
-	//b << 3 << 0 << -21 << 1;
-	//A << -1 << -2 << 0 << 1 << 2 << 4 << 0 << 1 << 1 << 3 << 1 << 4 << 3 << 8 << 2 << -2;
-	//b << 2.34 << 1.245 << -3.4 << 1.234;
-	//A << 2 << 3 << 1.2 << 2.4 << 1.6 << 2.44 << -4.6 << -10.1 << 2.34;
-	//b << -1.7 << 5.96 << 27.21;
-	//std::cout << A;
-	//B = A.Transparent();
-	//std::cout << B;
-	//std::cout << A.Determinant() << std::endl;
-	//A.GaussEliminationWVector(b);
-	//A.GetWholeMatrixVector(b);
-	//std::cout << b;
-	//W.FillMatrix(4,0,0);
-	//std::cout << W;
-
-	// std::cout << "Fill the first Matrix" << std::endl;
-	/*for(int i = 0; i < x; i++)
-	{
-		for(int j = 0; j<y; j++)
-		{
-			std::cin >> v;
-			// v++;
-			A.FillMatrix(v,i,j);
+	for(int mm = 0; mm < M; mm++) {
+		std::cin >> n;
+		Vector<double> a(n),b(n),c(n),f(n),x(n);
+		a << 0;
+		for(int i = 0; i < n-1;i++) {
+			std::cin >> Input;
+			a << Input;
 		}
-	}*/
-	//A << -2 << -1 << 4 << 2 << 3 << -1 <<  -4 << -10 << -5;
-	//std::cout << A;
-	//A *=-1;
-	//std::cout << A;
-	//Matrix<float> B = std::move(A);
-	//std::cout << A;
-	//std::cout << B;
-	//Matrix<float> C;
-	//C = std::move(B);
-	//std::cout << C;
-	// 1. sor
-	// A.FillMatrix(-2,0,0);
-	// A.FillMatrix(-1,0,1);
-	// A.FillMatrix(4,0,2);
-
-	// 2. sor
-	// A.FillMatrix(2,1,0);
-	// A.FillMatrix(3,1,1);
-	// A.FillMatrix(-1,1,2);
-
-	// 3. sor
-	// A.FillMatrix(-4,2,0);
-	// A.FillMatrix(-10,2,1);
-	// A.FillMatrix(-5,2,2);
-
-	// std::cout << "Fill the Vector" << std::endl;
-	// W.FillMatrix(3,0,0);
-	// W.FillMatrix(1,1,0);
-	// W.FillMatrix(-12,2,0);
-	/*for(int i = 0; i < x; i++)
-	{
-		for(int j = 0; j<1; j++)
-		{
-			std::cin >> v;
-			// v++;
-			W.FillMatrix(v,i,j);
+		//std::cout << a;
+		for(int i = 0; i < n;i++) {
+			std::cin >> Input;
+			b << Input;
 		}
-	}*/
-	// std::cout << "Fill the second Matrix" << std::endl;
-	/*for(int i = 0; i < x; i++)
-	{
-		for(int j = 0; j<y; j++)
-		{
-			std::cin >> v;
-			B.FillMatrix(v,i,j);
+		//std::cout << b;
+		for(int i = 0; i < n-1;i++) {
+			std::cin >> Input;
+			c << Input;
 		}
-	}*/
-
-	// A.GetWholeMatrix();
-	// A.GaussEliminationWVector(W);
-    // A.GetWholeMatrixVector(W);
-	// std::cout << "A Determinant:" << A.Determinant() << std::endl;		
-	// A.GetWholeMatrix();
-	// A.GaussElimination_2();
-// 	A.GetWholeMatrixVector(W);
-	// std::cout << A;
-	// std::cout << "A rangja:" << A.Rank() << std::endl;
-	// B.GetWholeMatrix();
-	// C = A;
-	// C.GetWholeMatrix();
-	// amikor meghívódik az operator()* fgv akkor this = A...
-	// C = A+B;
-	// C.GetWholeMatrix();
-
-	// Matrix<float> ID(4,4);
-	// ID.Make_Identity();
-	// ID.GetWholeMatrix();
-
-	// Matrix<float> C = A.Inverz_Matrix();
-	// std::cout << C;
-
-	// std::cout << A;
-
-	// Matrix<float> Z(x,y);
-	// Z = A*C;
-	// Z = C*A;
-	// std::cout << Z;
-		return 0;
+		//std::cout << c;
+		c << 0;
+		for(int i = 0; i < n;i++) {
+			std::cin >> Input;
+			f << Input;
+		}
+		//std::cout << f;
+		if(Vector<double>::TriDiagon(a,b,c,f,n,x)) {
+			std::cout << x;
+		}
+	}
+	return 0;
 }
