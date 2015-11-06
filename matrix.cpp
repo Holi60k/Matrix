@@ -824,10 +824,16 @@ public:
 		std::cout << std::endl;
 
 	}
-
+	void FillVector(int value,int x) {
+		this->Matx[x][0] = value;
+	}
 	friend std::ostream & operator<< ( std::ostream & os, Vector & A ) {
 		A.GetVector();
 		return os;
+	}
+
+	T GetValue(int i) {
+		return this->Matx[i][0];
 	}
 	
 	static bool TriDiagon(Vector & a,Vector & b, Vector & c, Vector & f, int size, Vector & x) {
@@ -869,18 +875,197 @@ public:
 
 
 	}
+
+	 T operator[](int i)
+      {
+          if( i > this->GetX() )
+          {
+              return (T)this->GetValue(0);
+          }
+          return (T)this->GetValue(i);
+      }
 private:
 
 };
 
+double Osztot_Diff(double xi, double xii, double fi, double fii) {
+
+	return (double)(fii-fi)/(xii-xi);
+}
+
+//fi+yi(zj-xi)+1/hi([xi,xi+1]f-yi)(zj-xi)^2 + 1/hi^2*(yi+1-2[xi,xi+1]f+yi)*(zj-xi)^2*(zj-xi+1)
+double harmadfokuKeplet(double fi,double xi,double xii, double yi,double yii, double hi,double zj, double dif) {
+	double szum = fi+yi*(zj-xi)+(1/hi)*(dif-yi)*(zj-xi)*(zj-xi) + (1/(hi*hi))*(yii-2*dif+yi)*(zj-xi)*(zj-xi)*(zj-xii);
+	return szum;
+}
+
 int main() {
 	//std::fstream myfile("trIN3", std::ios_base::in);
-	int M;
-	int n;
+	int N=1,n=5,m=6;
 	double Input;
-    std::cin >> M;
+	bool failedH = false, failedZ = false;
+    //std::cin >> N;
+    //std::cin >> n >> m;
+    Vector<double> oDif(n),a(n-1),b(n-1),c(n-1),d(n-1),y(n-1);
+    n++;
+    Vector<double> x(n),f(n),h(n),z(m),output(m);
+    double oszottDif;
+    x << -2 << -1 << 0 << 1 << 2 << 3;
+    //std::cout << "x feltöltése megtörtént"<< std::endl;
 
-	for(int mm = 0; mm < M; mm++) {
+    f << 4 << 1 << 7 << 4 << 12 << 9;
+    //std::cout << "f feltöltése megtörtént"<< std::endl;
+    double Yy[2],*zIndex = new double[m];
+    Yy[0] = 15;
+    Yy[1] = 8;
+  //  std::cout << "Yy feltöltése megtörtént" << std::endl;
+    z << -1.6 << -0.5 << 0.75 << -0.25 << 2.1 << 1.8;
+    for(int k = 0; k < N; k++) {
+	    /*for(int i = 0; i < n; i++) {
+	    	std::cin >> Input;
+	    	x << Input;
+	    }
+
+	    for(int i = 0; i < n; i++) {
+	    	std::cin >> Input;
+	    	f << Input;
+	    }
+
+	    for(int i = 0; i < n; i++) {
+	    	std::cin >> Input;
+	    	Yy[i] = Input;
+	    }
+	   
+
+	    for(int i = 0; i < m; i++) {
+			std::cin >> Input;
+	    	z << Input;
+	    }*/
+	    /*
+		1. itt számoljuk ki a h[i] = x [i+1] − x [i]
+		*/
+		for(int i = 0; i < n-1; i++) {
+			h << x[i+1]-x[i];
+
+			if(h[i] <= 0 ){
+				failedH = true;
+			}
+		}
+		//std::cout << "h feltöltése megtörtént" << std::endl;
+		if (failedH == true) {
+			std::cout << "alappontok" << std::endl;
+			break;
+		}
+		/*
+		1.b ellenörzés
+		*/
+	/*	for(int i = 0; i < m; i++) {
+			if(z[i] < x[0] || z[i] > x[n]) {
+				failedZ = true;
+			}
+		}
+
+		if(failedZ == true) {
+			std::cout << "z-ertek" << std::endl;
+			break;
+		}*/
+
+
+		//2. osztott diferenciák
+
+		for(int i = 0; i < n-1; i++) {
+			//std::cout << "LOL" << std::endl;
+			//std::cout << x[i+1] << ", " << x[i] << ", " << f[i+1] << ", " << f[i] << ", " <<std::endl;
+			oszottDif = Osztot_Diff(x[i+1],x[i],f[i+1],f[i]);
+			//std::cout << oszottDif << std::endl;
+			oDif.FillVector(oszottDif,i);
+			//std::cout << "oDif[" << i << "] = " << oDif.GetValue(i) << " | " << Osztot_Diff(x[i+1],x[i],f[i+1],f[i]) << std::endl;
+		}
+		//std::cout << "oDif feltöltése megtörtént" << std::endl;
+		//std::cout << oDif;
+		//3. a,b,c,d vektorok feltöltése
+		a.FillVector(0,0);
+		//std::cout << "a << 0" << std::endl;
+
+		for(int i = 1; i < n-2;i++) {
+			a.FillVector(h[i],i);
+		}
+		//std::cout << "a feltöltése megtörtént" << std::endl;
+		//std::cout << a;
+		for(int i = 0; i < n-2;i++) {
+			
+			b.FillVector(2*(h[i+1]+h[i]),i);
+		}
+		//std::cout << "b feltöltése megtörtént" << std::endl;
+		//std::cout << b;
+
+		for(int i = 0; i < n-3;i++) {
+			d.FillVector(h[i],i);
+		}
+		//std::cout << "d feltöltése megtörtént" << std::endl;
+		//std::cout << d;
+
+		//c vektor feltöltése
+		c.FillVector(3*(h[0]*Osztot_Diff(x[2],x[1],f[2],f[1]) + h[1]*Osztot_Diff(x[1],x[0],f[1],f[0]))-h[1]*Yy[0],0);
+		//std::cout << "c[0] kész" << std::endl;
+		for(int i = 1; i < n-2; i++) {
+			c.FillVector(3 * (h[i]*Osztot_Diff(x[i+2],x[i+1],f[i+2],f[i+1]) + h[i+1]*Osztot_Diff(x[i+1],x[i],f[i+1],f[i])),i);
+			//std::cout << "c[" << i << "] kész és megyek:" << n-3 << std::endl;
+		}
+		//std::cout << "ciklus kész c-re" << std::endl;
+		c.FillVector(3 * (h[n-3] * Osztot_Diff(x[n-1],x[n-2],f[n-1],f[n-2]) + h[n-2] * Osztot_Diff(x[n-2],x[n-3],f[n-2],f[n-3]))-h[n-3]*Yy[1],n-3);
+		//std::cout << "c vektor kész" << std::endl;
+		//std::cout << "a vektor:" << a;
+		//std::cout << "b vektor:" << b;
+		//std::cout << "d vektor:" << d;
+		//std::cout << "c vektor:" << c;
+		if(Vector<double>::TriDiagon(a,b,d,c,n-2,y)) {
+			//std::cout << y;
+		}
+		//std::cout << "n-1:" << n-1 << std::endl;
+		for(int i = 0; i < m; i++) {
+			//std::cout << "V: " << z[i] << std::endl;
+			for(int j = 0; j < n-1; j++) {
+		//		std::cout << "x[j] = " << x[j] << " " << "x[j+1] = " << x[j+1] << " ertek: " << (x[j] >= z[i] && z[i] <= x[j+1]) << std::endl;
+				if(x[j] >= z[i] || z[i] <= x[j+1]){
+					zIndex[i] = j;
+					break;
+				}
+			}
+			std::cout << zIndex[i] << " " << std::endl;
+		}
+        //harmadfokuKeplet(
+        //double fi,
+        //double xi,
+        //double xii,
+        //double yi,
+        //double yii,
+        //double hi,
+        //double zj,
+        //double dif) {
+		double HarmadEr,O;
+		for(int i = 0; i < m; i++) {
+			oszottDif = Osztot_Diff(x[zIndex[i]+1],x[zIndex[i]],f[zIndex[i]+1],f[zIndex[i]]);
+			HarmadEr = harmadfokuKeplet(
+				f[zIndex[i]],
+				x[zIndex[i]],
+				x[zIndex[i]+1],
+				y[zIndex[i]],
+				y[zIndex[i]+1],
+				h[zIndex[i]],
+				z[i],
+				oszottDif
+				);
+			output.FillVector(HarmadEr,i);
+			std::cout << "o["<<i<<"]:" << output[i] << std::endl;
+		}
+
+		std::cout << output;
+
+	}
+
+
+	/*for(int mm = 0; mm < M; mm++) {
 		std::cin >> n;
 		Vector<double> a(n),b(n),c(n),f(n),x(n);
 		a << 0;
@@ -908,6 +1093,6 @@ int main() {
 		if(Vector<double>::TriDiagon(a,b,c,f,n,x)) {
 			std::cout << x;
 		}
-	}
+	}*/
 	return 0;
 }
