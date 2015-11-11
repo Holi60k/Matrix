@@ -875,7 +875,7 @@ public:
 
 	}
 
-	double operator[](int i)
+	T operator[](int i)
       {
           if( i > this->GetX() )
           {
@@ -900,11 +900,11 @@ double harmadfokuKeplet(double fi,double xi,double xii, double yi,double yii, do
 }
 
 int main() {
-	std::fstream myfile("spIN", std::ios_base::in);
+	//std::fstream myfile("spIN", std::ios_base::in);
 	int N,n,m;
 	double Input;
 	bool failedH = false, failedZ = false;
-    myfile >> N;
+    std::cin >> N;
    
     //std::cout << "n:" << n << " m:" << m << std::endl;
     
@@ -923,7 +923,7 @@ int main() {
     for(int k = 0; k < N; k++) {
     	failedH = false;
     	failedZ = false;
-    	myfile >> n >> m;
+    	std::cin >> n >> m;
    		//std::cout << "n:" << n << " m:" << m << std::endl;
     	Vector<double> oDif(n),a(n-1),b(n-1),c(n-1),d(n-1),y(n-1);
 	    n++;
@@ -932,7 +932,7 @@ int main() {
 	    double Yy[2];
 	    int *zIndex = new int[m];
 	    for(int i = 0; i < n; i++) {
-	    	myfile >> Input;
+	    	std::cin >> Input;
 	    	//std::cout << "Input x-nél:" << Input <<  std::endl;
 	    	x.FillVector(Input,i);
 
@@ -940,19 +940,19 @@ int main() {
 	    //std::cout << "x feltöltése" << std::endl;
 	    //std::cout << x;
 	    for(int i = 0; i < n; i++) {
-	    	myfile >> Input;
+	    	std::cin >> Input;
 	    	f.FillVector(Input,i);
 	    }
 	    //std::cout << "f feltöltése" << std::endl;
 	    //std::cout << f;
 	    for(int i = 0; i < 2; i++) {
-	    	myfile >> Input;
+	    	std::cin >> Input;
 	    	Yy[i] = Input;
 	    }
 	   
 	    //std::cout << "y feltöltése" << std::endl;
 	    for(int i = 0; i < m; i++) {
-			myfile >> Input;
+			std::cin >> Input;
 	    	z.FillVector(Input,i);
 	    }
 	    //std::cout << "z feltöltése" << std::endl;
@@ -999,28 +999,33 @@ int main() {
 			//3. a,b,c,d vektorok feltöltése
 			a.FillVector(0,0);
 			for(int i = 1; i < n-2;i++) {
-				a.FillVector(h[i],i);
+				a.FillVector(h[i+1],i);
 			}
-		
+			//std::cout << "A vektor:" << a;
 			for(int i = 0; i < n-2;i++) {
 				
 				b.FillVector(2*(h[i+1]+h[i]),i);
 			}
-		
+			//std::cout << "B vektor:"  << b;
 
 			for(int i = 0; i < n-3;i++) {
 				d.FillVector(h[i],i);
 			}
-		
+			d.FillVector(0,n-3);
+			//std::cout << "D vektor:" << d;
 			//c vektor feltöltése
-			c.FillVector(3*(h[0]*Osztot_Diff(x[2],x[1],f[2],f[1]) + h[1]*Osztot_Diff(x[1],x[0],f[1],f[0]))-h[1]*Yy[0],0);
-			for(int i = 1; i < n-2; i++) {
-				c.FillVector(3 * (h[i]*Osztot_Diff(x[i+2],x[i+1],f[i+2],f[i+1]) + h[i+1]*Osztot_Diff(x[i+1],x[i],f[i+1],f[i])),i);
+			c.FillVector(3 * (h[0] * Osztot_Diff(x[2],x[1],f[2],f[1]) + h[1]*Osztot_Diff(x[1],x[0],f[1],f[0]))-h[1]*Yy[0],0);
+			for(int i = 1; i < n-3; i++) {
+				c.FillVector(3 * (h[i] * Osztot_Diff(x[i+2],x[i+1],f[i+2],f[i+1]) + h[i+1] * Osztot_Diff(x[i+1],x[i],f[i+1],f[i])),i);
 			}
-			c.FillVector(3 * (h[n-3] * Osztot_Diff(x[n-1],x[n-2],f[n-1],f[n-2]) + h[n-2] * Osztot_Diff(x[n-2],x[n-3],f[n-2],f[n-3]))-h[n-3]*Yy[1],n-3);
+			//3(hn-2[xn-1,xn]f+hn-1[xn-2,xn-1]f)-hn-2yn
+			n--;
+			c.FillVector(3 * (h[n-2] * Osztot_Diff(x[n],x[n-1],f[n],f[n-1]) + h[n-1] * Osztot_Diff(x[n-2],x[n-1],f[n-2],f[n-1]))-h[n-2]*Yy[1],n-2);
+			n++;
+			//std::cout << "C vektor:" << c;
 			//std::cout << "tridiaon" << std::endl;
 			if(Vector<double>::TriDiagon(a,b,d,c,n-2,y)) {
-				//std::cout << y;
+				//std::cout << "Y vektor:" << y;
 			}
 
 
@@ -1031,7 +1036,7 @@ int main() {
 				
 			}
 			bigY.FillVector(Yy[1],n-1);
-
+			//std::cout << "bigY:" << bigY;
 			for(int i = 0; i < m; i++) {
 				
 				for(int j = 0; j < n-1; j++) {
