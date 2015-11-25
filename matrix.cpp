@@ -1022,7 +1022,7 @@ int main() {
 			n--;
 			c.FillVector(3 * (h[n-2] * Osztot_Diff(x[n],x[n-1],f[n],f[n-1]) + h[n-1] * Osztot_Diff(x[n-2],x[n-1],f[n-2],f[n-1]))-h[n-2]*Yy[1],n-2);
 			n++;
-			//std::cout << "C vektor:" << c;
+			std::cout << "C vektor:" << c;
 			//std::cout << "tridiaon" << std::endl;
 			if(Vector<double>::TriDiagon(a,b,d,c,n-2,y)) {
 				//std::cout << "Y vektor:" << y;
