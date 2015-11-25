@@ -820,7 +820,7 @@ public:
 			std::cout.precision(8);
 			std::cout << std::fixed << this->Matx[i][0] << " ";
 		}
-		std::cout << std::endl;
+		//std::cout << std::endl;
 
 	}
 	void FillVector(T value,int x) {
@@ -875,6 +875,28 @@ public:
 
 	}
 
+	Vector<T> operator/ (double t) {
+		for (int i = 0; i < this->GetX();i++) {
+			this->Matx[i][0] = this->GetValue(i) / t;
+		}
+		return *this;
+	}
+
+	Vector operator*(double v) {
+
+		for(int i = 0; i < this->GetX(); i++) {
+			this->Matx[i][0] *= v;
+		}
+		return *this;
+	}
+
+	Vector operator-(Vector<T>  v) {
+		for(int i = 0; i < this->GetX(); i++) {
+			this->Matx[i][0] -= v.GetValue(i);
+		}
+		return *this;
+	}
+
 	T operator[](int i)
       {
           if( i > this->GetX() )
@@ -883,232 +905,190 @@ public:
           }
           return (T)this->GetValue(i);
       }
+      bool isZeroVector() {
+      	bool R = true;
+      	for(int i = 0; i < this->GetX(); i++) {
+      		if(this->GetValue(i) != 0) {
+      			R = false;
+      			break;
+      		}
+      	}
+      	return R;
+      }
+
+      Vector Normalize() {
+
+      		Vector<double> Normalized(this->GetX());
+      		double l = Length();
+      	//	std::cout << "vektor hossza:" << l << std::endl;
+      		for(int i = 0; i < this->GetX(); i++) {
+      			Normalized.FillVector(this->GetValue(i)/l,i);
+      		}
+      	//	std::cout << "eredeti vektor:"<< *this;
+      	//	std::cout << "normalizált: " << Normalized;
+      		return Normalized;
+      }
+
+      double Length() {
+      	double length = 0;
+      	double temp;
+      	for(int i = 0; i < this->GetX();i++) {
+      		temp = this->GetValue(i)*this->GetValue(i);
+      		length+=temp;
+      	}
+      	return sqrt(length);
+      }
+
+      Vector operator* (const Matrix<T> & A) {
+		T Var = 0;
+		if(this->GetY() == A.GetX()) {
+			
+			Vector<T> Result(this->GetX(),A.GetY());
+			for(int i = 0; i < Result.GetY();i++) {
+				for(int j = 0; j < Result.GetX(); j++) {				
+					
+					for(int l = 0; l < this->GetY();l++ ) {
+						Var += this->GetValue(j,l) * A.GetValue(l,i);
+					}			
+					Result.FillMVector(Var,j);
+					Var = 0;
+					
+				}
+
+			}
+
+			return Result;
+		} else {
+			std::cout << "Sorry I can not multiplicate these two Matrixes..."<< std::endl;
+			
+		}
+		return 0;
+	}
+
+
 private:
 
 };
 
-double Osztot_Diff(double xi, double xii, double fi, double fii) {
+Vector<double>  mSzv(Matrix<double> A, Vector<double> x) {
+	double Var = 0;
+		if(x.GetX() == A.GetY()) {
+			
+			Vector<double> Result(x.GetX());
+			for(int i = 0; i < Result.GetX();i++) {
+				for(int j = 0; j < 1; j++) {
 
-	return (double)(fii-fi)/(xii-xi);
+					for(int k = 0; k < Result.GetX(); k++){
+					//std::cout << "A.GetValue(i,j): " << A.GetValue(i,k) << 	" x.GetValue(k):" << x.GetValue(k) << std::endl;
+					Var += A.GetValue(i,k) * x.GetValue(k);
+					//std::cout << "Var:" << Var << std::endl;
+					
+					}
+					Result.FillVector(Var,i);
+					Var = 0;
+				}
+
+			}
+			//std::cout << "RESULT:" << Result;
+			return Result;
+		} else {
+			std::cout << "Sorry I can not multiplicate these two Matrixes..."<< std::endl;
+			
+		}
+		return x;
 }
 
-//fi+yi(zj-xi)+1/hi([xi,xi+1]f-yi)(zj-xi)^2 + 1/hi^2*(yi+1-2[xi,xi+1]f+yi)*(zj-xi)^2*(zj-xi+1)
-double harmadfokuKeplet(double fi,double xi,double xii, double yi,double yii, double hi,double zj, double dif) {
-	double szum;
-	szum = fi+yi*(zj-xi)+(1/hi)*(dif-yi)*(zj-xi)*(zj-xi) + (1/(hi*hi))*(yii-2*dif+yi)*(zj-xi)*(zj-xi)*(zj-xii);
-	return szum;
+double BelsoSz(Vector<double> *A, Vector<double> *B){
+      	double sz = 0;
+      	for(int i = 0; i < A->GetX(); i++) {
+      	//	std::cout << "A[i]:" <<A[i] << " B[i]:" << B[i] << " A[i]*B[i]:" <<A[i]*B[i] << " " << std::endl;
+      		sz += A->GetValue(i) * B->GetValue(i);
+      	}
+      	return sz;
+}
+
+
+bool leallas(double lambdaK, double lambdaKm1,double Eps, double lambdaNull) {
+	return std::abs(lambdaK - lambdaKm1) < (Eps*(1+std::abs(lambdaNull)));
+}
+
+bool sikerTeszt(double nSz, double Eps) {
+	return std::fabs(nSz - Eps) > 10e-15;
+}
+
+double kettoNorma(Vector<double> x) {
+	double Szum = 0;
+	for(int i = 0; i < x.GetX();i++) {
+		Szum += x.GetValue(i)*x.GetValue(i);
+	}
+	return Szum;
 }
 
 int main() {
-	//std::fstream myfile("spIN", std::ios_base::in);
-	int N,n,m;
-	double Input;
-	bool failedH = false, failedZ = false;
+	int N,n,mI;
+	double Input,Eps,lambdaNull,lambdaK,lambdaKm1;
+	bool failKezdo = false;
     std::cin >> N;
-   
-    //std::cout << "n:" << n << " m:" << m << std::endl;
-    
-    double oszottDif;
-    //x << -2 << -1 << 0 << 1 << 2 << 3;
-    //std::cout << "x feltöltése megtörtént"<< std::endl;
+    std::cout.precision(8);
+    for(int l = 0; l < N; l++) {
+    	std::cin >> n;
+    	Matrix<double> A(n,n);
+    	Vector<double> y0(n),y(n),x(n);
 
-    //f << 4 << 1 << 7 << 4 << 12 << 9;
-    //std::cout << "f feltöltése megtörtént"<< std::endl;
-    
-    //Yy[0] = 15;
-    //Yy[1] = 8;
-  	//std::cout << "Yy feltöltése megtörtént" << std::endl;
-    //z << -1.6 << -0.5 << 0.75 << -0.25 << 2.4 << 1.8;
+    	for(int i = 0; i < n*n; i++) {
+    		std::cin >> Input;
+    		A << Input;
+    	}
+    	std::cin >> mI;
+    	std::cin >> Eps;
+    	std::cout << "Eps:" << Eps << std::endl;
+   		//kezdővektor olvasása és ellenörzése
+    	for(int i = 0; i < n; i++) {
+    		std::cin >> Input;
+    		y0 << Input;
+    	}
 
-    for(int k = 0; k < N; k++) {
-    	failedH = false;
-    	failedZ = false;
-    	std::cin >> n >> m;
-   		//std::cout << "n:" << n << " m:" << m << std::endl;
-    	Vector<double> oDif(n),a(n-1),b(n-1),c(n-1),d(n-1),y(n-1);
-	    n++;
-	    Vector<double> x(n),f(n),h(n);
-	    Vector<double> z(m),output(m),bigY(n);
-	    double Yy[2];
-	    int *zIndex = new int[m];
-	    for(int i = 0; i < n; i++) {
-	    	std::cin >> Input;
-	    	//std::cout << "Input x-nél:" << Input <<  std::endl;
-	    	x.FillVector(Input,i);
+    	if(y0.isZeroVector()) {
+    		std::cout << "kezdovektor" << std::endl;
+    	} else {
 
-	    }
-	    //std::cout << "x feltöltése" << std::endl;
-	    //std::cout << x;
-	    for(int i = 0; i < n; i++) {
-	    	std::cin >> Input;
-	    	f.FillVector(Input,i);
-	    }
-	    //std::cout << "f feltöltése" << std::endl;
-	    //std::cout << f;
-	    for(int i = 0; i < 2; i++) {
-	    	std::cin >> Input;
-	    	Yy[i] = Input;
-	    }
-	   
-	    //std::cout << "y feltöltése" << std::endl;
-	    for(int i = 0; i < m; i++) {
-			std::cin >> Input;
-	    	z.FillVector(Input,i);
-	    }
-	    //std::cout << "z feltöltése" << std::endl;
-	    //std::cout << z;
-	    /*
-		1. itt számoljuk ki a h[i] = x [i+1] − x [i]
-		*/
-		for(int i = 0; i < n-1; i++) {
-			h.FillVector(x[i+1]-x[i],i);
+    	//k szerinti forciklussal megyek a maxIt-ig
+    	//lambdaNull kiszámítása
 
-			if(h[i] <= 0 ){
-				failedH = true;
-			}
-		}
-		//std::cout << "h feltöltése megtörtént" << std::endl;
-		if (failedH == true) {
-			std::cout << "alappontok" << std::endl;
-		}
-		/*
-		1.b ellenörzés
-		*/
-		for(int i = 0; i < m; i++) {
-			if(z[i] < x[0] || z[i] > x[n-1]) {
-				failedZ = true;
+    	x = mSzv(A,y0);
+		y = x.Normalize();//itt elvileg megcisnáltuk a y^1-et
+	    lambdaNull = BelsoSz(&x,&y0);
+		int k = 1;
+		for(; k <= mI; k++) {
+			//std::cout <<"y ciklusban: " << y;
+
+			x = mSzv(A,y);
+			y = x.Normalize();
+			lambdaKm1 = BelsoSz(&x,&y);
+			std::cout << "lambdaKm1: " << lambdaKm1 << std::endl;
+
+			x = mSzv(A,y);//Ax^k vektor
+			y = x.Normalize();
+			lambdaK = BelsoSz(&x,&y);
+			std::cout << "lambdaK: " << lambdaK << std::endl;
+			if(std::abs(lambdaK - lambdaKm1) < (Eps*(1+std::abs(lambdaNull))))
+			{
+
 				break;
 			}
+					
+	    }
+
+	    if(k == mI) {
+	    		std::cout << "maxit" << std::endl;
+	    } else if (sikerTeszt(kettoNorma (mSzv(A,y) - (y*lambdaKm1)),Eps ) ) {
+	   		  	std::cout << "siker " << std::fixed << lambdaK << " " << y << k << std::endl;
+		} else {
+			    	std::cout << "sikertelen" << std::endl;
 		}
+	    
+    	}
 
-		if(failedZ == true) {
-			std::cout << "z-ertek" << std::endl;
-		}
-
-
-		//2. osztott diferenciák
-		if(failedZ == false && failedH == false) {
-			for(int i = 0; i < n-1; i++) {
-				
-				oszottDif = Osztot_Diff(x[i+1],x[i],f[i+1],f[i]);
-				
-				oDif.FillVector(oszottDif,i);
-				
-			}
-			//std::cout << "oDif feltöltése" << std::endl;
-			//3. a,b,c,d vektorok feltöltése
-			a.FillVector(0,0);
-			for(int i = 1; i < n-2;i++) {
-				a.FillVector(h[i+1],i);
-			}
-			//std::cout << "A vektor:" << a;
-			for(int i = 0; i < n-2;i++) {
-				
-				b.FillVector(2*(h[i+1]+h[i]),i);
-			}
-			//std::cout << "B vektor:"  << b;
-
-			for(int i = 0; i < n-3;i++) {
-				d.FillVector(h[i],i);
-			}
-			d.FillVector(0,n-3);
-			//std::cout << "D vektor:" << d;
-			//c vektor feltöltése
-			c.FillVector(3 * (h[0] * Osztot_Diff(x[2],x[1],f[2],f[1]) + h[1]*Osztot_Diff(x[1],x[0],f[1],f[0]))-h[1]*Yy[0],0);
-			for(int i = 1; i < n-3; i++) {
-				c.FillVector(3 * (h[i] * Osztot_Diff(x[i+2],x[i+1],f[i+2],f[i+1]) + h[i+1] * Osztot_Diff(x[i+1],x[i],f[i+1],f[i])),i);
-			}
-			//3(hn-2[xn-1,xn]f+hn-1[xn-2,xn-1]f)-hn-2yn
-			n--;
-			c.FillVector(3 * (h[n-2] * Osztot_Diff(x[n],x[n-1],f[n],f[n-1]) + h[n-1] * Osztot_Diff(x[n-2],x[n-1],f[n-2],f[n-1]))-h[n-2]*Yy[1],n-2);
-			n++;
-			std::cout << "C vektor:" << c;
-			//std::cout << "tridiaon" << std::endl;
-			if(Vector<double>::TriDiagon(a,b,d,c,n-2,y)) {
-				//std::cout << "Y vektor:" << y;
-			}
-
-
-			//std::cout << "bigY feltölése" << std::endl;
-			bigY.FillVector(Yy[0],0);
-			for(int i = 1; i < n-1; i++) {
-				bigY.FillVector(y[i-1],i);
-				
-			}
-			bigY.FillVector(Yy[1],n-1);
-			//std::cout << "bigY:" << bigY;
-			for(int i = 0; i < m; i++) {
-				
-				for(int j = 0; j < n-1; j++) {
-			
-					if(x[j] >= z[i] || z[i] <= x[j+1]){
-						zIndex[i] = j;
-						break;
-					}
-				}			
-			}
-	        //harmadfokuKeplet(
-	        //double fi,
-	        //double xi,
-	        //double xii,
-	        //double yi,
-	        //double yii,
-	        //double hi,
-	        //double zj,
-	        //double dif) {
-			//std::cout << z << std::endl;
-			double HarmadEr;
-			for(int i = 0; i < m; i++) {
-				oszottDif = Osztot_Diff(x[zIndex[i]+1],x[zIndex[i]],f[zIndex[i]+1],f[zIndex[i]]);
-				HarmadEr = harmadfokuKeplet(
-					f[zIndex[i]],
-					x[zIndex[i]],
-					x[zIndex[i]+1],
-					bigY[zIndex[i]],
-					bigY[zIndex[i]+1],
-					h[zIndex[i]],
-					z[i],
-					oszottDif
-					);
-				output.FillVector(HarmadEr,i);
-				//std::cout << "o["<<i<<"]:" << output[i] << std::endl;
-			}
-
-			std::cout << output;
-			delete zIndex;
-
-		}
 	}
-
-
-	/*for(int mm = 0; mm < M; mm++) {
-		std::cin >> n;
-		Vector<double> a(n),b(n),c(n),f(n),x(n);
-		a << 0;
-		for(int i = 0; i < n-1;i++) {
-			std::cin >> Input;
-			a << Input;
-		}
-		//std::cout << a;
-		for(int i = 0; i < n;i++) {
-			std::cin >> Input;
-			b << Input;
-		}
-		//std::cout << b;
-		for(int i = 0; i < n-1;i++) {
-			std::cin >> Input;
-			c << Input;
-		}
-		//std::cout << c;
-		c << 0;
-		for(int i = 0; i < n;i++) {
-			std::cin >> Input;
-			f << Input;
-		}
-		//std::cout << f;
-		if(Vector<double>::TriDiagon(a,b,c,f,n,x)) {
-			std::cout << x;
-		}
-	}*/
 	return 0;
 }
