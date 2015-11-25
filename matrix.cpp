@@ -904,7 +904,7 @@ int main() {
 	int N,n,m;
 	double Input;
 	bool failedH = false, failedZ = false;
-    myfile >> N;
+    std::cin >> N;
    
     //std::cout << "n:" << n << " m:" << m << std::endl;
     
@@ -923,7 +923,7 @@ int main() {
     for(int k = 0; k < N; k++) {
     	failedH = false;
     	failedZ = false;
-    	myfile >> n >> m;
+    	std::cin >> n >> m;
    		//std::cout << "n:" << n << " m:" << m << std::endl;
     	Vector<double> oDif(n),a(n-1),b(n-1),c(n-1),d(n-1),y(n-1);
 	    n++;
@@ -932,7 +932,7 @@ int main() {
 	    double Yy[2];
 	    int *zIndex = new int[m];
 	    for(int i = 0; i < n; i++) {
-	    	myfile >> Input;
+	    	std::cin >> Input;
 	    	//std::cout << "Input x-nél:" << Input <<  std::endl;
 	    	x.FillVector(Input,i);
 
@@ -940,19 +940,19 @@ int main() {
 	    //std::cout << "x feltöltése" << std::endl;
 	    //std::cout << x;
 	    for(int i = 0; i < n; i++) {
-	    	myfile >> Input;
+	    	std::cin >> Input;
 	    	f.FillVector(Input,i);
 	    }
 	    //std::cout << "f feltöltése" << std::endl;
 	    //std::cout << f;
 	    for(int i = 0; i < 2; i++) {
-	    	myfile >> Input;
+	    	std::cin >> Input;
 	    	Yy[i] = Input;
 	    }
 	   
 	    //std::cout << "y feltöltése" << std::endl;
 	    for(int i = 0; i < m; i++) {
-			myfile >> Input;
+			std::cin >> Input;
 	    	z.FillVector(Input,i);
 	    }
 	    //std::cout << "z feltöltése" << std::endl;
