@@ -820,7 +820,7 @@ public:
 			std::cout.precision(8);
 			std::cout << std::fixed << this->Matx[i][0] << " ";
 		}
-		std::cout << std::endl;
+		//std::cout << std::endl;
 
 	}
 	void FillVector(T value,int x) {
@@ -875,6 +875,28 @@ public:
 
 	}
 
+	Vector<T> operator/ (double t) {
+		for (int i = 0; i < this->GetX();i++) {
+			this->Matx[i][0] = this->GetValue(i) / t;
+		}
+		return *this;
+	}
+
+	Vector operator*(double v) {
+
+		for(int i = 0; i < this->GetX(); i++) {
+			this->Matx[i][0] *= v;
+		}
+		return *this;
+	}
+
+	Vector operator-(Vector<T>  v) {
+		for(int i = 0; i < this->GetX(); i++) {
+			this->Matx[i][0] -= v.GetValue(i);
+		}
+		return *this;
+	}
+
 	T operator[](int i)
       {
           if( i > this->GetX() )
@@ -892,6 +914,29 @@ public:
       		}
       	}
       	return R;
+      }
+
+      Vector Normalize() {
+
+      		Vector<double> Normalized(this->GetX());
+      		double l = Length();
+      	//	std::cout << "vektor hossza:" << l << std::endl;
+      		for(int i = 0; i < this->GetX(); i++) {
+      			Normalized.FillVector(this->GetValue(i)/l,i);
+      		}
+      	//	std::cout << "eredeti vektor:"<< *this;
+      	//	std::cout << "normalizált: " << Normalized;
+      		return Normalized;
+      }
+
+      double Length() {
+      	double length = 0;
+      	double temp;
+      	for(int i = 0; i < this->GetX();i++) {
+      		temp = this->GetValue(i)*this->GetValue(i);
+      		length+=temp;
+      	}
+      	return sqrt(length);
       }
 
       Vector operator* (const Matrix<T> & A) {
@@ -921,28 +966,30 @@ public:
 	}
 
 
-
-
 private:
 
 };
 
-Vector<double> mSzv(Matrix<double> A, Vector<double> x) {
+Vector<double>  mSzv(Matrix<double> A, Vector<double> x) {
 	double Var = 0;
-
 		if(x.GetX() == A.GetY()) {
 			
 			Vector<double> Result(x.GetX());
 			for(int i = 0; i < Result.GetX();i++) {
-				for(int j = 0; j < Result.GetY(); j++) {				
-					Var += A.GetValue(i,j) * x[j];
+				for(int j = 0; j < 1; j++) {
+
+					for(int k = 0; k < Result.GetX(); k++){
+					//std::cout << "A.GetValue(i,j): " << A.GetValue(i,k) << 	" x.GetValue(k):" << x.GetValue(k) << std::endl;
+					Var += A.GetValue(i,k) * x.GetValue(k);
+					//std::cout << "Var:" << Var << std::endl;
+					
+					}
 					Result.FillVector(Var,i);
-					Var = 0;					
+					Var = 0;
 				}
 
 			}
-
-
+			//std::cout << "RESULT:" << Result;
 			return Result;
 		} else {
 			std::cout << "Sorry I can not multiplicate these two Matrixes..."<< std::endl;
@@ -950,43 +997,98 @@ Vector<double> mSzv(Matrix<double> A, Vector<double> x) {
 		}
 		return x;
 }
- double BelsoSz(Vector<double> A, Vector<double> B){
+
+double BelsoSz(Vector<double> *A, Vector<double> *B){
       	double sz = 0;
-      	for(int i = 0; i < A.GetX(); i++) {
-      		sz += A[i] + B[i];
+      	for(int i = 0; i < A->GetX(); i++) {
+      	//	std::cout << "A[i]:" <<A[i] << " B[i]:" << B[i] << " A[i]*B[i]:" <<A[i]*B[i] << " " << std::endl;
+      		sz += A->GetValue(i) * B->GetValue(i);
       	}
       	return sz;
- }
+}
+
+
+bool leallas(double lambdaK, double lambdaKm1,double Eps, double lambdaNull) {
+	return std::abs(lambdaK - lambdaKm1) < (Eps*(1+std::abs(lambdaNull)));
+}
+
+bool sikerTeszt(double nSz, double Eps) {
+	return std::fabs(nSz - Eps) > 10e-15;
+}
+
+double kettoNorma(Vector<double> x) {
+	double Szum = 0;
+	for(int i = 0; i < x.GetX();i++) {
+		Szum += x.GetValue(i)*x.GetValue(i);
+	}
+	return Szum;
+}
 
 int main() {
-	//std::fstream myfile("spIN", std::ios_base::in);
 	int N,n,mI;
-	double Input,Eps,lambdaNull;
+	double Input,Eps,lambdaNull,lambdaK,lambdaKm1;
 	bool failKezdo = false;
     std::cin >> N;
-
-    for(int k = 0; k < N; k++) {
+    std::cout.precision(8);
+    for(int l = 0; l < N; l++) {
     	std::cin >> n;
     	Matrix<double> A(n,n);
-    	Vector<double> y0(n),sz(n);
+    	Vector<double> y0(n),y(n),x(n);
+
     	for(int i = 0; i < n*n; i++) {
     		std::cin >> Input;
     		A << Input;
     	}
     	std::cin >> mI;
     	std::cin >> Eps;
-
+    	std::cout << "Eps:" << Eps << std::endl;
    		//kezdővektor olvasása és ellenörzése
     	for(int i = 0; i < n; i++) {
     		std::cin >> Input;
     		y0 << Input;
     	}
+
     	if(y0.isZeroVector()) {
     		std::cout << "kezdovektor" << std::endl;
+    	} else {
+
+    	//k szerinti forciklussal megyek a maxIt-ig
+    	//lambdaNull kiszámítása
+
+    	x = mSzv(A,y0);
+		y = x.Normalize();//itt elvileg megcisnáltuk a y^1-et
+	    lambdaNull = BelsoSz(&x,&y0);
+		int k = 1;
+		for(; k <= mI; k++) {
+			//std::cout <<"y ciklusban: " << y;
+
+			x = mSzv(A,y);
+			y = x.Normalize();
+			lambdaKm1 = BelsoSz(&x,&y);
+			std::cout << "lambdaKm1: " << lambdaKm1 << std::endl;
+
+			x = mSzv(A,y);//Ax^k vektor
+			y = x.Normalize();
+			lambdaK = BelsoSz(&x,&y);
+			std::cout << "lambdaK: " << lambdaK << std::endl;
+			if(std::abs(lambdaK - lambdaKm1) < (Eps*(1+std::abs(lambdaNull))))
+			{
+
+				break;
+			}
+					
+	    }
+
+	    if(k == mI) {
+	    		std::cout << "maxit" << std::endl;
+	    } else if (sikerTeszt(kettoNorma (mSzv(A,y) - (y*lambdaKm1)),Eps ) ) {
+	   		  	std::cout << "siker " << std::fixed << lambdaK << " " << y << k << std::endl;
+		} else {
+			    	std::cout << "sikertelen" << std::endl;
+		}
+	    
     	}
-    	sz = mSzv(A,y0);
-    	lambdaNull = BelsoSz(sz,y0);
-    	std::cout << sz;
+
 	}
 	return 0;
 }
